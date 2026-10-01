@@ -14,7 +14,8 @@
 body{margin:0;background:var(--bg);color:var(--fg);font-family:Helvetica,Arial,sans-serif;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 header{background:#1A1A1A;color:#fff;padding:12px 18px;display:flex;align-items:center;gap:12px}
 header h1{margin:0;font-size:1.15rem}header h1 span{color:var(--gold)}
-header small{color:#bbb;flex:1}
+header small{color:#bbb;flex:1}header small#ver{flex:none;color:var(--gold);font-size:.75rem}
+.hms{display:flex;align-items:center;gap:2px}.hms input{min-width:0;padding:6px 2px;text-align:center}
 main{display:grid;grid-template-columns:1fr 360px;gap:14px;padding:14px;max-width:1400px;margin:auto}
 @media(max-width:900px){main{grid-template-columns:1fr}}
 .card{background:var(--panel);border:1px solid var(--bd);border-radius:10px;padding:12px}
@@ -36,7 +37,7 @@ summary{cursor:pointer;font-weight:700;padding:6px 0}
 </style>
 </head>
 <body>
-<header><h1>MTE <span>Video Editor</span></h1><small>Music · Lower thirds · Social exports</small><button id="theme" title="Dark / normal mode">🌓</button></header>
+<header><h1>MTE <span>Video Editor</span></h1><small>Music · Lower thirds · Social exports</small><small id="ver"></small><button id="theme" title="Dark / normal mode">🌓</button></header>
 <main>
 <section class="card">
   <canvas id="cv" width="1920" height="1080"></canvas>
@@ -49,7 +50,7 @@ summary{cursor:pointer;font-weight:700;padding:6px 0}
   <label>Music clip</label><input type="file" id="mf" accept="audio/*">
   <div class="r2"><div><label>Video volume</label><input type="range" data-g="vVol" min="0" max="1" step="0.05"></div>
   <div><label>Music volume</label><input type="range" data-g="mVol" min="0" max="1" step="0.05"></div></div>
-  <div class="r2"><div><label>Music starts at (sec in clip)</label><input type="number" data-g="mStart" min="0" step="0.5"></div>
+  <div class="r2"><div><label>Music starts at (h : m : s)</label><div class="hms" id="hMs"></div></div>
   <div><label>Loop music</label><input type="checkbox" data-g="mLoop"></div></div>
 </details>
 <details open><summary>2 · Lower thirds</summary>
@@ -57,22 +58,44 @@ summary{cursor:pointer;font-weight:700;padding:6px 0}
   <label>Kicker line</label><input data-l="kicker">
   <label>Main line</label><input data-l="main">
   <label>Secondary line</label><input data-l="sub">
-  <div class="r2"><div><label>Start (sec)</label><input type="number" data-l="start" min="0" step="0.5"></div>
-  <div><label>Duration (sec)</label><input type="number" data-l="dur" min="1" step="0.5"></div></div>
+  <div class="r2"><div><label>Start (h : m : s)</label><div class="hms" id="hSt"></div></div>
+  <div><label>Duration (h : m : s)</label><div class="hms" id="hDu"></div></div></div>
+  <label>Overall size (%)</label><input type="range" data-l="scale" min="40" max="250" step="5">
   <div class="r2"><div><label>Transition</label><select data-l="trans"><option value="slide">Slide</option><option value="fade">Fade</option><option value="rise">Rise</option><option value="wipe">Wipe</option><option value="zoom">Zoom</option><option value="none">None</option></select></div>
   <div><label>Position</label><select data-l="pos"><option value="bl">Bottom left</option><option value="safe">Shorts-safe (higher)</option><option value="top">Top left</option></select></div></div>
   <div class="r2"><div><label>Font</label><select data-l="font" id="fontSel"></select></div>
   <div><label>Accent</label><input type="color" data-l="accent"></div></div>
 </details>
-<details><summary>3 · Fonts</summary>
+<details open><summary>3 · Cut · Copy · Delete</summary>
+  <div class="bar"><select id="edT"><option value="v">Edit: Video</option><option value="m">Edit: Music</option></select><button id="edUndo">↩ Undo</button><button id="edReset">Reset</button></div>
+  <label>Source preview (original clip, pick In / Out here)</label>
+  <video id="pv" controls playsinline style="width:100%;max-height:200px;background:#000;border-radius:6px"></video>
+  <audio id="pa" controls style="width:100%;display:none"></audio>
+  <div class="r2"><div><label>In (h : m : s)</label><div class="hms" id="hIn"></div></div><div><label>Out (h : m : s)</label><div class="hms" id="hOut"></div></div></div>
+  <div class="bar"><button id="setIn">Set In ◂</button><button id="setOut">▸ Set Out</button><button id="prevSel">▶ Selection</button></div>
+  <div class="bar"><button id="edCut">✂ Cut</button><button id="edCopy">Copy</button><button id="edDel">Delete</button><button id="edPaste">Paste</button></div>
+  <div id="edInfo" style="font-size:.75rem;color:var(--mut);margin-top:6px"></div>
+  <p style="font-size:.72rem;color:var(--mut)">Paste inserts the copied piece at the main display's playhead. The big display always shows the edited result.</p>
+</details>
+<details><summary>4 · Logo (PNG)</summary>
+  <label>Transparent logo (.png)</label><input type="file" id="lgf" accept="image/png"><button id="lgx" style="margin-top:6px">Remove logo</button>
+  <label>Quick position</label><select id="lgq"><option value="">Choose…</option><option value="2,3">Top left</option><option value="50,3">Top centre</option><option value="98,3">Top right</option><option value="50,50">Centre</option><option value="2,97">Bottom left</option><option value="98,97">Bottom right</option></select>
+  <label>Horizontal position</label><input type="range" data-lg="x" min="0" max="100" step="0.5">
+  <label>Vertical position</label><input type="range" data-lg="y" min="0" max="100" step="0.5">
+  <label>Size</label><input type="range" data-lg="size" min="3" max="60" step="0.5">
+  <div class="r2"><div><label>Animation</label><select data-lg="anim"><option value="none">None (static)</option><option value="pulse">Pulse</option><option value="float">Float</option><option value="swing">Swing</option><option value="flip">Flip</option><option value="blink">Blink</option><option value="bounce">Bounce</option></select></div>
+  <div><label>One loop lasts (sec)</label><input type="number" data-lg="dur" min="0.3" max="20" step="0.1"></div></div>
+  <label><input type="checkbox" data-lg="show"> Show logo</label>
+</details>
+<details><summary>5 · Fonts</summary>
   <label>Import font (.ttf .otf .woff .woff2)</label><input type="file" id="ff" accept=".ttf,.otf,.woff,.woff2" multiple>
 </details>
-<details><summary>4 · Templates</summary>
+<details><summary>6 · Templates</summary>
   <div class="bar"><input id="tn" placeholder="Template name"><button id="ts">Save</button></div>
   <div id="tlist"></div>
   <div class="bar"><button id="te">Export file</button><button id="ti">Import file</button><input type="file" id="tif" accept=".json" hidden></div>
 </details>
-<details open><summary>5 · Export</summary>
+<details open><summary>7 · Export</summary>
   <label>Platform / size</label><select data-g="size" id="sz"></select>
   <div class="r2"><div><label>Fit</label><select data-g="fit"><option value="cover">Fill (crop)</option><option value="contain">Fit (bars)</option></select></div>
   <div><label>Quality</label><select data-g="q" data-n><option value="1">Full</option><option value="0.75">75%</option><option value="0.5">50%</option></select></div></div>
@@ -86,9 +109,10 @@ summary{cursor:pointer;font-weight:700;padding:6px 0}
 <audio id="mus" preload="auto" style="display:none"></audio>
 <script>
 const $=id=>document.getElementById(id);
+const APP={v:'1.1.0',build:'2026-10-01'};$('ver').textContent='v'+APP.v;$('ver').title='Build '+APP.build;
 const SIZES={yt:['YouTube – main (16:9)',1920,1080],yts:['YouTube Shorts (9:16)',1080,1920],fb:['Facebook – main post (16:9)',1280,720],fbsq:['Facebook – square post (1:1)',1080,1080],fbs:['Facebook – Shorts/Reels (9:16)',1080,1920],tt:['TikTok (9:16)',1080,1920],x:['X / Twitter (16:9)',1280,720],xsq:['X / Twitter square (1:1)',1080,1080],ig:['Instagram feed (4:5)',1080,1350],igr:['Instagram Reels (9:16)',1080,1920],wa:['WhatsApp Status (9:16)',720,1280]};
-const newLT=()=>({kicker:'Word ministration by',main:'Pastor John Mensah',sub:'Sunday Service',start:1,dur:5,accent:'#C9932E',font:'Arial',trans:'slide',pos:'bl'});
-let S={size:'yt',fit:'cover',q:1,fmt:'auto',vVol:1,mVol:0.8,mStart:0,mLoop:true,lts:[newLT()],sel:0};
+const newLT=()=>({kicker:'Word ministration by',main:'Pastor John Mensah',sub:'Sunday Service',start:1,dur:5,accent:'#C9932E',font:'Arial',trans:'slide',pos:'bl',scale:100});
+let S={size:'yt',fit:'cover',q:1,fmt:'auto',vVol:1,mVol:0.8,mStart:0,mLoop:true,lts:[newLT()],sel:0,logo:{show:true,x:95,y:5,size:14,anim:'none',dur:2}};
 const cv=$('cv'),cx=cv.getContext('2d'),vid=$('vid'),mus=$('mus');
 const msg=t=>$('msg').textContent=t||'';
 const fonts=['Arial','Helvetica','Georgia','Times New Roman','Verdana'];
@@ -108,20 +132,32 @@ function ensureAudio(){
 }
 
 /* ---------- media loading ---------- */
-$('vf').onchange=e=>{const f=e.target.files[0];if(!f)return;ensureAudio();vid.src=URL.createObjectURL(f);vid.onloadedmetadata=()=>{$('sk').max=vid.duration;vid.currentTime=0.01;msg('Video loaded: '+f.name)}};
-$('mf').onchange=e=>{const f=e.target.files[0];if(!f)return;ensureAudio();mus.src=URL.createObjectURL(f);msg('Music loaded: '+f.name)};
-const syncMus=()=>{if(mus.src){mus.currentTime=S.mStart+vid.currentTime}};
-vid.onplay=()=>{if(mus.src){syncMus();mus.play()}$('pp').textContent='⏸'};
-vid.onpause=()=>{mus.pause();$('pp').textContent='▶'};
-vid.onseeked=()=>{if(!vid.paused)syncMus()};
-$('pp').onclick=()=>{if(!vid.src)return;ensureAudio();vid.paused?vid.play():vid.pause()};
-$('sk').oninput=e=>{vid.currentTime=+e.target.value};
-
+$('vf').onchange=e=>{const f=e.target.files[0];if(!f)return;ensureAudio();vid.src=URL.createObjectURL(f);vid.onloadedmetadata=()=>{ED.v.segs=[{a:0,b:vid.duration}];K=0;$('pv').src=vid.src;edInfo();vid.currentTime=0.01;msg('Video loaded: '+f.name)}};
+$('mf').onchange=e=>{const f=e.target.files[0];if(!f)return;ensureAudio();mus.src=URL.createObjectURL(f);$('pa').src=mus.src;mus.onloadedmetadata=()=>{ED.m.segs=[{a:0,b:mus.duration}];edInfo()};msg('Music loaded: '+f.name)};
+/* ---------- edit engine: pieces (segments) of the source, in play order ---------- */
+const ED={v:{segs:[],clip:null},m:{segs:[],clip:null}};let K=0,onDone=null,edT='v',hist=[],prevSel=false;const E={i:0,o:0};
+const tot=g=>g.reduce((n,x)=>n+x.b-x.a,0);
+const fmt=s=>{s=Math.max(0,s|0);const h=s/3600|0,m=s/60%60|0;return(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(s%60).padStart(2,'0')};
+function locate(g,T){for(let k=0;k<g.length;k++){const l=g[k].b-g[k].a;if(T<l||k==g.length-1)return{k,src:g[k].a+Math.max(0,Math.min(T,l))};T-=l}return{k:0,src:0}}
+function progT(){const g=ED.v.segs,s=g[K];let n=0;for(let i=0;i<K&&i<g.length;i++)n+=g[i].b-g[i].a;return s?n+Math.min(Math.max(vid.currentTime-s.a,0),s.b-s.a):0}
+const sub=(g,i,o)=>{const r=[];for(const x of g){if(o<=x.a||i>=x.b)r.push(x);else{if(i>x.a)r.push({a:x.a,b:i});if(o<x.b)r.push({a:o,b:x.b})}}return r};
+function norm(g){const r=[];for(const x of g)if(x.b-x.a>0.02){const p=r[r.length-1];p&&Math.abs(p.b-x.a)<1e-3?p.b=x.b:r.push({a:x.a,b:x.b})}return r}
+function insertAt(g,T,c){let n=0,k=0;for(;k<g.length;k++){const l=g[k].b-g[k].a;if(T<=n+1e-6)break;if(T<n+l-1e-6){const x=g[k],m=x.a+T-n;g.splice(k,1,{a:x.a,b:m},{a:m,b:x.b});k++;break}n+=l}g.splice(k,0,{a:c.a,b:c.b})}
+const fire=()=>{vid.pause();if(onDone){const f=onDone;onDone=null;f()}};
+vid.onended=fire;
+vid.onplay=()=>$('pp').textContent='⏸';vid.onpause=()=>$('pp').textContent='▶';
+function stepProgram(){const g=ED.v.segs;if(!g.length||vid.paused)return;K=Math.min(K,g.length-1);if(vid.currentTime>=g[K].b-0.04){if(K+1<g.length){K++;vid.currentTime=g[K].a}else fire()}}
+function musicSync(){const M=ED.m.segs,total=tot(M);if(!mus.src||!ac||!total)return;
+  if(vid.paused){if(!mus.paused)mus.pause();return}
+  let Tm=progT()+S.mStart;if(Tm>=total){if(S.mLoop)Tm%=total;else{mus.pause();return}}
+  const w=locate(M,Tm).src;if(mus.paused)mus.play().catch(()=>{});if(Math.abs(mus.currentTime-w)>0.2)mus.currentTime=w}
+$('pp').onclick=()=>{if(!vid.src)return;ensureAudio();if(vid.paused){const g=ED.v.segs;if(K>=g.length-1&&vid.currentTime>=g[g.length-1].b-0.1){K=0;vid.currentTime=g[0].a}vid.play()}else vid.pause()};
+$('sk').oninput=e=>{const L=locate(ED.v.segs,+e.target.value);K=L.k;vid.currentTime=L.src};
 /* ---------- drawing ---------- */
 const hex=(h,m)=>{const n=parseInt(h.slice(1),16);return'rgb('+[n>>16,n>>8&255,n&255].map(v=>Math.round(v+(255-v)*m)).join(',')+')'};
 function drawLT(c,W,H,t,L){
   const a=t-L.start,b=L.start+L.dur-t;if(a<0||b<0)return;
-  const p=Math.min(1,Math.min(a,b)/0.6),e=L.trans=='none'?1:1-Math.pow(1-p,3),u=Math.min(W,H)/720;
+  const p=Math.min(1,Math.min(a,b)/0.6),e=L.trans=='none'?1:1-Math.pow(1-p,3),u=Math.min(W,H)/720*(L.scale||100)/100;
   const F=(w,px,it)=>`${it?'italic ':''}${w} ${px*u}px "${L.font}",Arial,sans-serif`;
   const rows=[[L.kicker,F(400,20,1),hex(L.accent,.4),28],[L.main,F(700,34),'#F8F5EC',42],[L.sub,F(400,17),'#C7CBE0',26]].filter(r=>r[0]);
   if(!rows.length)return;
@@ -145,14 +181,18 @@ function draw(c,W,H,t){
   const vw=vid.videoWidth,vh=vid.videoHeight;
   if(vw){const s=(S.fit=='cover'?Math.max:Math.min)(W/vw,H/vh);c.drawImage(vid,(W-vw*s)/2,(H-vh*s)/2,vw*s,vh*s)}
   else{c.fillStyle='#666';c.font=`${H/20}px Arial`;c.textAlign='center';c.textBaseline='middle';c.fillText('Load a video to begin',W/2,H/2);c.textAlign='left'}
-  S.lts.forEach(L=>drawLT(c,W,H,t,L));
+  drawLogo(c,W,H,t);S.lts.forEach(L=>drawLT(c,W,H,t,L));
 }
+let logoImg=null;
+function drawLogo(c,W,H,t){const g=S.logo;if(!logoImg||!g.show)return;const lw=W*g.size/100,lh=lw*logoImg.height/logoImg.width;
+  let sx=1,sy=1,rot=0,al=1,dy=0;if(g.anim!='none'&&g.dur>0){const p=(t%g.dur)/g.dur,w=Math.sin(p*2*Math.PI);
+    if(g.anim=='pulse')sx=sy=1+.1*w;else if(g.anim=='float')dy=w*lh*.12;else if(g.anim=='swing')rot=w*.21;else if(g.anim=='flip')sx=Math.cos(p*2*Math.PI);else if(g.anim=='blink')al=.65+.35*w;else if(g.anim=='bounce')dy=-Math.abs(w)*lh*.25}
+  c.save();c.globalAlpha=al;c.translate((W-lw)*g.x/100+lw/2,(H-lh)*g.y/100+lh/2+dy);c.rotate(rot);c.scale(sx,sy);c.drawImage(logoImg,-lw/2,-lh/2,lw,lh);c.restore()}
 const dims=()=>{const z=SIZES[S.size]||SIZES.yt;return[Math.round(z[1]*S.q/2)*2,Math.round(z[2]*S.q/2)*2]};
 function loop(){
   const[w,h]=dims();if(cv.width!=w||cv.height!=h){cv.width=w;cv.height=h}
-  if(vG){vG.gain.value=S.vVol;mG.gain.value=S.mVol}mus.loop=S.mLoop;
-  draw(cx,w,h,vid.currentTime||0);
-  const t=vid.currentTime||0;$('sk').value=t;$('tm').textContent=Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0');
+  if(vG){vG.gain.value=S.vVol;mG.gain.value=S.mVol}mus.loop=false;stepProgram();musicSync();pvCheck();
+  const t=progT();draw(cx,w,h,t);$('sk').value=t;$('tm').textContent=fmt(t)+' / '+fmt(tot(ED.v.segs));
   requestAnimationFrame(loop);
 }
 
@@ -163,13 +203,14 @@ function sync(){
   fontOpts();
   document.querySelectorAll('[data-g]').forEach(e=>{const v=S[e.dataset.g];e.type=='checkbox'?e.checked=v:e.value=v});
   const L=S.lts[S.sel];document.querySelectorAll('[data-l]').forEach(e=>e.value=L[e.dataset.l]);
-  $('ltSel').innerHTML=S.lts.map((l,i)=>`<option value="${i}">${i+1}. ${l.main||'(empty)'}</option>`).join('');$('ltSel').value=S.sel;
+  $('ltSel').innerHTML=S.lts.map((l,i)=>`<option value="${i}">${i+1}. ${l.main||'(empty)'}</option>`).join('');$('ltSel').value=S.sel;document.querySelectorAll('[data-lg]').forEach(e=>{const v=S.logo[e.dataset.lg];e.type=='checkbox'?e.checked=v:e.value=v});HM.forEach(h=>h.r());edInfo();
   tlist();
 }
 document.addEventListener('input',e=>{
-  const t=e.target,g=t.dataset.g,l=t.dataset.l;
-  if(g){S[g]=t.type=='checkbox'?t.checked:(['number','range'].includes(t.type)||t.dataset.n!==undefined)?+t.value:t.value;if(g=='mStart'&&!vid.paused)syncMus()}
-  if(l){S.lts[S.sel][l]=t.type=='number'?+t.value:t.value;if(l=='main'){const o=$('ltSel').options[S.sel];if(o)o.textContent=(S.sel+1)+'. '+t.value}}
+  const t=e.target,g=t.dataset.g,l=t.dataset.l,lg=t.dataset.lg;
+  if(g){S[g]=t.type=='checkbox'?t.checked:(['number','range'].includes(t.type)||t.dataset.n!==undefined)?+t.value:t.value}
+  if(lg)S.logo[lg]=t.type=='checkbox'?t.checked:['number','range'].includes(t.type)?+t.value:t.value;
+  if(l){S.lts[S.sel][l]=['number','range'].includes(t.type)?+t.value:t.value;if(l=='main'){const o=$('ltSel').options[S.sel];if(o)o.textContent=(S.sel+1)+'. '+t.value}}
 });
 $('ltSel').onchange=e=>{S.sel=+e.target.value;sync()};
 $('ltAdd').onclick=()=>{const n=newLT();n.start=Math.round((vid.currentTime||0)*2)/2;S.lts.push(n);S.sel=S.lts.length-1;sync()};
@@ -185,16 +226,16 @@ $('ff').onchange=async e=>{for(const f of e.target.files){try{const name=f.name.
 const TK='mte.templates';const tpls=()=>JSON.parse(localStorage.getItem(TK)||'{}');
 function tlist(){$('tlist').innerHTML='';Object.keys(tpls()).forEach(n=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>applyTpl(tpls()[n]);const x=document.createElement('button');x.textContent='✕';x.onclick=()=>{const t=tpls();delete t[n];localStorage.setItem(TK,JSON.stringify(t));tlist()};$('tlist').append(b,x)})}
 function applyTpl(t){S=Object.assign({},S,t,{sel:0});sync();msg('Template applied')}
-$('ts').onclick=()=>{const n=$('tn').value.trim();if(!n)return msg('Name your template first');const t=tpls();t[n]=JSON.parse(JSON.stringify(S));localStorage.setItem(TK,JSON.stringify(t));tlist();msg('Template saved')};
+$('ts').onclick=()=>{const n=$('tn').value.trim();if(!n)return msg('Name your template first');const t=tpls();t[n]=Object.assign(JSON.parse(JSON.stringify(S)),{ver:APP.v});localStorage.setItem(TK,JSON.stringify(t));tlist();msg('Template saved')};
 const dl=(blob,name)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click()};
-$('te').onclick=()=>dl(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}),'mte-template.json');
+$('te').onclick=()=>dl(new Blob([JSON.stringify({...S,ver:APP.v},null,1)],{type:'application/json'}),'mte-template.json');
 $('ti').onclick=()=>$('tif').click();
 $('tif').onchange=async e=>{try{applyTpl(JSON.parse(await e.target.files[0].text()))}catch(x){msg('Invalid template file')}};
 
 /* ---------- export ---------- */
 const seek=t=>new Promise(r=>{vid.onseeked=()=>{vid.onseeked=null;r()};vid.currentTime=t});
 async function doExport(){
-  if(!vid.src)return msg('Load a video first');
+  if(!vid.src||!ED.v.segs.length)return msg('Load a video first');
   ensureAudio();vid.pause();const[w,h]=dims();
   if(S.fmt=='gif')return exportGif();
   const pref={mp4:['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4'],webm:['video/webm;codecs=vp9,opus','video/webm']};
@@ -205,15 +246,15 @@ async function doExport(){
   const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:Math.round(8e6*S.q)}),chunks=[];
   rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
   rec.onstop=()=>{outG.gain.value=1;mus.pause();dl(new Blob(chunks,{type:mime}),`mte-${S.size}.${mime.includes('mp4')?'mp4':'webm'}`);msg('Export complete ✔');$('ex').disabled=false};
-  await seek(0);outG.gain.value=0;$('ex').disabled=true;msg('Exporting… keep this tab open');
-  if(mus.src){syncMus()}rec.start(1000);vid.onended=()=>{vid.onended=null;setTimeout(()=>rec.stop(),300)};
+  K=0;await seek(ED.v.segs[0].a);outG.gain.value=0;$('ex').disabled=true;msg('Exporting… keep this tab open');
+  rec.start(1000);onDone=()=>setTimeout(()=>rec.stop(),300);
   vid.play();
 }
 async function exportGif(){
-  const d=Math.min(vid.duration,30),gw=Math.min(480,dims()[0]),gh=Math.round(gw*dims()[1]/dims()[0]/2)*2;
+  const d=Math.min(tot(ED.v.segs),30),gw=Math.min(480,dims()[0]),gh=Math.round(gw*dims()[1]/dims()[0]/2)*2;
   const oc=document.createElement('canvas');oc.width=gw;oc.height=gh;const c=oc.getContext('2d',{willReadFrequently:true}),frames=[];
   $('ex').disabled=true;
-  for(let t=0;t<d;t+=0.1){await seek(t);draw(c,gw,gh,t);const px=c.getImageData(0,0,gw,gh).data,ix=new Uint8Array(gw*gh);
+  for(let t=0;t<d;t+=0.1){await seek(locate(ED.v.segs,t).src);draw(c,gw,gh,t);const px=c.getImageData(0,0,gw,gh).data,ix=new Uint8Array(gw*gh);
     for(let i=0;i<ix.length;i++)ix[i]=Math.round(px[i*4]/51)*36+Math.round(px[i*4+1]/51)*6+Math.round(px[i*4+2]/51);
     frames.push(ix);msg(`Rendering GIF ${Math.round(t/d*100)}%`)}
   dl(new Blob([makeGif(frames,gw,gh,10)],{type:'image/gif'}),`mte-${S.size}.gif`);msg('GIF ready ✔');$('ex').disabled=false;
@@ -239,11 +280,45 @@ function makeGif(frames,w,h,delay){
 }
 $('ex').onclick=doExport;
 
+/* ---------- h:m:s pickers, edit tools, logo ---------- */
+const HM=[];
+function mkHMS(id,get,set){const el=$(id);el.innerHTML=[['h',99,1],['m',59,1],['s',59,0.5]].map(([u,mx,st])=>`<input type="number" min="0" max="${mx}" step="${st}" title="${u}">`).join('<b>:</b>');
+  const n=el.querySelectorAll('input');
+  const r=()=>{const v=get()||0;n[0].value=Math.floor(v/3600);n[1].value=Math.floor(v%3600/60);n[2].value=+(v%60).toFixed(1)};
+  n.forEach(i=>i.oninput=()=>set((+n[0].value||0)*3600+(+n[1].value||0)*60+(+n[2].value||0)));HM.push({r});r()}
+mkHMS('hSt',()=>S.lts[S.sel].start,v=>S.lts[S.sel].start=v);
+mkHMS('hDu',()=>S.lts[S.sel].dur,v=>S.lts[S.sel].dur=Math.max(.5,v));
+mkHMS('hMs',()=>S.mStart,v=>S.mStart=v);
+mkHMS('hIn',()=>E.i,v=>E.i=v);mkHMS('hOut',()=>E.o,v=>E.o=v);
+const src=()=>edT=='v'?$('pv'):$('pa'),rh=()=>HM.forEach(h=>h.r());
+function edInfo(){const v=ED.v.segs,m=ED.m.segs;$('sk').max=tot(v)||1;$('edInfo').textContent=`Video: ${v.length} piece(s), ${fmt(tot(v))} · Music: ${m.length} piece(s), ${fmt(tot(m))}`}
+function pvCheck(){const s=src();if(prevSel&&!s.paused&&s.currentTime>=E.o){s.pause();prevSel=false}}
+$('edT').onchange=e=>{edT=e.target.value;$('pv').style.display=edT=='v'?'':'none';$('pa').style.display=edT=='m'?'':'none';$('pv').pause();$('pa').pause()};
+$('setIn').onclick=()=>{E.i=src().currentTime;if(E.o<=E.i)E.o=E.i+5;rh()};
+$('setOut').onclick=()=>{E.o=src().currentTime;rh()};
+$('prevSel').onclick=()=>{if(!(E.o>E.i))return msg('Set In and Out first');const s=src();s.currentTime=E.i;s.play();prevSel=true};
+function edOp(k){const t=ED[edT];if(!t.segs.length)return msg('Load a '+(edT=='v'?'video':'music clip')+' first');
+  if(k=='paste'&&!t.clip)return msg('Nothing copied yet');
+  if(k!='paste'&&!(E.o-E.i>0.05))return msg('Set In and Out first (use the Source preview)');
+  if(k=='cut'||k=='copy')t.clip={a:E.i,b:E.o};
+  if(k=='copy')return msg('Copied ✔');
+  const T=progT();hist.push(JSON.stringify([ED.v.segs,ED.m.segs]));if(hist.length>30)hist.shift();
+  if(k=='paste')insertAt(t.segs,edT=='m'?T+S.mStart:T,t.clip);
+  else{const n=sub(t.segs,E.i,E.o);if(!n.length){hist.pop();return msg('Cannot remove everything')}t.segs=n}
+  t.segs=norm(t.segs);const L=locate(ED.v.segs,T);K=L.k;if(vid.src)vid.currentTime=L.src;edInfo();msg('Done ✔')}
+$('edCut').onclick=()=>edOp('cut');$('edCopy').onclick=()=>edOp('copy');$('edDel').onclick=()=>edOp('del');$('edPaste').onclick=()=>edOp('paste');
+$('edUndo').onclick=()=>{const h=hist.pop();if(!h)return msg('Nothing to undo');[ED.v.segs,ED.m.segs]=JSON.parse(h);K=0;if(vid.src)vid.currentTime=ED.v.segs[0].a;edInfo()};
+$('edReset').onclick=()=>{const el=edT=='v'?vid:mus;ED[edT].segs=el.duration?[{a:0,b:el.duration}]:[];if(edT=='v'){K=0}edInfo()};
+function setLogo(url){const i=new Image();i.onload=()=>{logoImg=i;msg('Logo loaded')};i.src=url}
+$('lgf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{setLogo(r.result);idb('put',r.result,'__logo')};r.readAsDataURL(f)};
+$('lgx').onclick=()=>{logoImg=null;idb('delete','__logo');msg('Logo removed')};
+$('lgq').onchange=e=>{if(!e.target.value)return;[S.logo.x,S.logo.y]=e.target.value.split(',').map(Number);sync()};
+
 /* ---------- init ---------- */
 (async()=>{
-  try{const keys=await idb('getAllKeys');for(const k of keys){await addFont(k,await idb('get',k))}}catch(x){}
+  try{const keys=await idb('getAllKeys');for(const k of keys){if(k=='__logo')continue;await addFont(k,await idb('get',k))}const lgd=await idb('get','__logo');if(lgd)setLogo(lgd);}catch(x){}
   sync();loop();
-  if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+  if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js?v='+APP.v).catch(()=>{});
 })();
 </script>
 </body>

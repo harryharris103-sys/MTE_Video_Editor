@@ -1,0 +1,37 @@
+Version 1.1.0 is ready. Replace index.html and sw.js in your folder and add CHANGELOG.md; the manifest and icon are unchanged. I checked the code for syntax errors and tested the cut/paste logic, but I haven't run it in a browser with a real video. Please test it, especially cut/paste with music playing.
+
+Version ID
+
+The version shows as a gold badge in the header (v1.1.0), and templates are stamped with it.
+It also names the offline cache, so each new version replaces the old cached copy on your devices.
+To release a new version, change APP.v near the top of the script, add a line to CHANGELOG.md, and push to GitHub.
+
+Cut, Copy, Delete, Paste (section 3)
+
+It works on either the video or the music, chosen from a dropdown.
+A small Source preview shows the original clip. Scrub it, then press Set In and Set Out. You can also type the times, and Selection plays just that range.
+Cut, Copy and Delete act on that range. Paste inserts the copied piece at the main display's current position.
+The big display always shows the edited result. The timeline length and the exported file both follow your cuts.
+Undo and Reset are there if you go wrong.
+Delete and Cut remove that stretch of the original clip everywhere it appears. If you've pasted a copy of a scene and then delete it, both copies go.
+
+Lower thirds
+
+There is an Overall size slider from 40% to 250%.
+Start, Duration and the music start time now use hour : minute : second boxes, as do the In and Out times.
+
+Logo (section 4)
+
+Import a transparent .png. It is saved on that device, so it's ready for your next video.
+Horizontal and vertical sliders place it, quick-position presets jump to the corners or centre, and a size slider sets how big it is.
+Animation can be None (static), Pulse, Float, Swing, Flip, Blink or Bounce. "One loop lasts" sets how long a single cycle takes.
+Logo settings are saved in templates, but the logo image itself isn't, so import the logo once per device.
+I left out glow and shadow effects, because your brand sheet says not to add effects to logos.
+
+Not included yet
+
+Only one logo at a time.
+There is no drag-to-trim handle bar. The Source preview with Set In and Set Out does that job for now.
+WMV export is still waiting on the ffmpeg step.
+
+Which should come next: WMV, multiple logos, or a visual trim bar?
